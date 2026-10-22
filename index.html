@@ -44,6 +44,23 @@
 <script>
   const params = new URLSearchParams(location.search);
   const code = params.get("code");
+
+  // The TV puts its helper's relay URL in `state`; only forward to a home-network address.
+  function relayURL(state) {
+    try {
+      const url = new URL(state);
+      const privateHost = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname) || url.hostname.endsWith(".local");
+      return url.protocol === "http:" && privateHost && url.pathname === "/auth/callback" ? url : null;
+    } catch {
+      return null;
+    }
+  }
+  const relay = code && relayURL(params.get("state") || "");
+  if (relay) {
+    relay.searchParams.set("code", code);
+    location.replace(relay.href);
+  }
+
   if (code) {
     document.getElementById("ok").hidden = false;
     document.getElementById("code").textContent = code;
